@@ -1,0 +1,73 @@
+name: Compilar APK
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Leer y validar la URL de la app
+        id: url
+        run: |
+          URL=$(tr -d '\r' < URL_APP.txt | grep -v '^[[:space:]]*#' | head -n1 | tr -d ' \t"')
+          echo "URL leida: $URL"
+          if ! echo "$URL" | grep -Eq '^https://script\.google\.com/(a/macros/[^/]+/|macros/)s/[A-Za-z0-9_-]+/exec$'; then
+            echo "::error file=URL_APP.txt::La URL no es valida. Debe verse asi: https://script.google.com/macros/s/XXXXXXXX/exec (una sola vez https://, y terminar en /exec)."
+            exit 1
+          fi
+          if echo "$URL" | grep -q 'PEGA_AQUI'; then
+            echo "::error file=URL_APP.txt::Falta pegar tu URL real de Apps Script en URL_APP.txt."
+            exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Poner la URL dentro de la app
+        env:
+          APP_URL: ${{ steps.url.outputs.url }}
+        run: |
+          sed -i "s#<string name=\"app_url\">[^<]*</string>#<string name=\"app_url\">${APP_URL}</string>#" app/src/main/res/values/strings.xml
+          grep app_url app/src/main/res/values/strings.xml
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Compilar APK
+        run: gradle assembleDebug --no-daemon -Pvc=${{ github.run_number }}
+
+      - name: Nombrar el APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk SistemaAutofinanciamiento.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SistemaAutofinanciamiento-apk
+          path: SistemaAutofinanciamiento.apk
+
+      # Enlace de descarga fijo (se actualiza en cada compilacion). Sirve para APP_LINK en Apps Script.
+      - name: Publicar enlace de descarga fijo
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete apk-latest --yes --cleanup-tag || true
+          gh release create apk-latest SistemaAutofinanciamiento.apk \
+            --target "${{ github.sha }}" \
+            --title "APK mas reciente" \
+            --notes "Compilacion #${{ github.run_number }}"
+          LINK="https://github.com/${{ github.repository }}/releases/download/apk-latest/SistemaAutofinanciamiento.apk"
+          echo "### APK listo" >> "$GITHUB_STEP_SUMMARY"
+          echo "Enlace de descarga fijo: $LINK" >> "$GITHUB_STEP_SUMMARY"
+          echo "Pegalo en la propiedad APP_LINK de Apps Script para el correo con QR." >> "$GITHUB_STEP_SUMMARY"
