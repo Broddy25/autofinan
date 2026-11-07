@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Autofinanciamiento</string>
+    <!-- Esta linea la rellena GitHub automaticamente con la URL de URL_APP.txt -->
+    <string name="app_url">https://script.google.com/macros/s/PEGA_AQUI_TU_ID/exec</string>
+</resources>

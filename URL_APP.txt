@@ -1,0 +1,3 @@
+# Pega en la linea de abajo la URL de tu aplicacion web de Apps Script (termina en /exec).
+# Borra la linea de ejemplo. No dejes espacios ni comillas.
+https://script.google.com/macros/s/AKfycbx_fyb-uHY_5gXjGr7oo_VLKWGMWlM5XcIjmq9kn7ycVbu0_f3l9XtxhxC-dS-EoOPwGQ/exec

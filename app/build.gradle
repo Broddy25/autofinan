@@ -1,0 +1,44 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Numero de version: lo pone GitHub en cada compilacion (-Pvc=NUMERO) para poder actualizar encima
+def vc = (project.findProperty('vc') ?: '1').toString().toInteger()
+
+android {
+    namespace 'com.escaleras.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.escaleras.app"
+        minSdk 24
+        targetSdk 34
+        versionCode vc
+        versionName "1.0." + vc
+    }
+
+    // Firma fija: asi cada APK nuevo se instala ENCIMA del anterior sin desinstalar nada
+    signingConfigs {
+        debug {
+            storeFile rootProject.file('keystore/sia.jks')
+            storePassword 'autofinanciamiento'
+            keyAlias 'sia'
+            keyPassword 'autofinanciamiento'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
